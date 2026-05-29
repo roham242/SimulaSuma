@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Cocinas Suma v10</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#f5f3ef;padding:1rem}
+#app{display:flex;gap:10px;min-height:600px}
+#sidebar{width:185px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;max-height:90vh;overflow-y:auto}
+#canvas-area{flex:1;display:flex;flex-direction:column;gap:7px}
+.panel{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:9px}
+.panel h3{font-size:10px;font-weight:500;color:#888;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em}
+.mod-btn{width:100%;text-align:left;padding:6px 8px;border:0.5px solid #ccc;border-radius:8px;cursor:pointer;font-size:11px;color:#222;background:#f5f3ef;margin-bottom:4px;display:flex;flex-direction:column;gap:1px}
+.mod-btn:hover{background:#eee}
+.mod-btn span{font-size:10px;color:#888}
+.wc{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.wc label{font-size:11px;color:#888}
+.wc input{width:58px;padding:3px 6px;font-size:11px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#222}
+#cw{overflow:hidden;background:#e8e5df;border:0.5px solid #ccc;border-radius:8px;flex:1;min-height:400px}
+canvas{display:block;cursor:default}
+.ab{display:flex;gap:7px;flex-wrap:wrap}
+button.a{padding:5px 11px;font-size:11px;border:0.5px solid #ccc;border-radius:8px;cursor:pointer;background:#fff;color:#222}
+button.a:hover{background:#f0ede8}
+button.a.p{background:#222;color:#fff;border-color:#222}
+#si{font-size:10px;color:#888;min-height:14px;padding:2px 0}
+.lbtn{width:100%;padding:6px 8px;font-size:11px;font-weight:500;border-radius:8px;cursor:pointer;border:2px solid transparent;text-align:left;background:#f5f3ef;color:#888;margin-bottom:4px}
+.lbtn.on{background:#fff}
+.cg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:4px}
+.cb{height:26px;border-radius:6px;cursor:pointer;border:2px solid transparent}
+.cb.on{border-color:#555}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="panel">
+      <h3>Línea</h3>
+      <button class="lbtn on" id="lb-clinic" onclick="setL('clinic')" style="color:#2e7d32;border-color:#2e7d32">Clinic</button>
+      <button class="lbtn" id="lb-sashimi" onclick="setL('sashimi')" style="color:#795548">Sashimi</button>
+      <button class="lbtn" id="lb-tranquera" onclick="setL('tranquera')" style="color:#4527a0">Tranquera</button>
+    </div>
+    <div class="panel">
+      <h3>Color</h3>
+      <div class="cg">
+        <div class="cb on" id="cb-beige" title="Beige" style="background:#efe0c8" onclick="setC('beige','#efe0c8','#b89a78','#6a5a42')"></div>
+        <div class="cb" id="cb-blanco" title="Blanco" style="background:#f5f5f3;border:1px solid #ddd" onclick="setC('blanco','#f5f5f3','#b8b8b4','#5a5a58')"></div>
+        <div class="cb" id="cb-madera" title="Madera" style="background:#c8924a" onclick="setC('madera','#c8924a','#8a5e20','#3a1a00')"></div>
+        <div class="cb" id="cb-azul" title="Azul oscuro" style="background:#1a3558" onclick="setC('azul','#1a3558','#4a7ab8','#c0d4f0')"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Alacena</h3>
+      <button class="mod-btn" onclick="add('al',60,'puertas',40)">Alacena h40<span>60cm · 1 hoja</span></button>
+      <button class="mod-btn" onclick="add('al',60,'puertas',60)">Alacena h60<span>60cm · 1 hoja</span></button>
+      <button class="mod-btn" onclick="add('al',60,'puertas',80)">Alacena h80<span>60cm · 1 hoja</span></button>
+      <button class="mod-btn" onclick="add('al',60,'puertas',100)">Alacena h100<span>60cm · 1 hoja</span></button>
+    </div>
+    <div class="panel">
+      <h3>Bajo mesada</h3>
+      <button class="mod-btn" onclick="add('bm',60,'puertas',80)">Puertas 60cm<span>1 hoja · h80</span></button>
+      <button class="mod-btn" onclick="add('bm',120,'puertas',80)">Puertas 120cm<span>2 hojas · h80</span></button>
+      <button class="mod-btn" onclick="add('bm',60,'caj4',80)">Cajonera 4= · 60<span>4 cajones · h80</span></button>
+      <button class="mod-btn" onclick="add('bm',60,'caj3',80)">Cajonera 2+1 · 60<span>h80</span></button>
+      <button class="mod-btn" onclick="add('bm',120,'caj4',80)">Cajonera 4= · 120<span>4 cajones · h80</span></button>
+      <button class="mod-btn" onclick="add('bm',120,'caj3',80)">Cajonera 2+1 · 120<span>h80</span></button>
+    </div>
+  </div>
+  <div id="canvas-area">
+    <div class="panel" style="padding:7px 11px">
+      <div class="wc">
+        <label>Ancho</label><input type="number" id="ww" value="300" min="60" max="600" onchange="redraw()">
+        <label>Alto</label><input type="number" id="wh" value="240" min="150" max="320" onchange="redraw()">
+        <label>Mesada</label><input type="number" id="mc" value="90" min="70" max="110" onchange="redraw()">
+      </div>
+    </div>
+    <div id="cw"><canvas id="c"></canvas></div>
+    <div id="si"></div>
+    <div class="ab">
+      <button class="a p" onclick="snap()">📷 Render</button>
+      <button class="a" id="bd" style="display:none" onclick="del()">🗑 Eliminar</button>
+      <button class="a" onclick="clearAll()">↺ Limpiar</button>
+    </div>
+  </div>
+</div>
+<script>
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let mods=[],sel=null,drag=false,dox=0,doy=0,sc=1;
+const PAD=48,PADY=20;
+let linea='clinic',color={id:'beige',fill:'#efe0c8',stroke:'#b89a78',text:'#6a5a42'};
+
+function W(){return parseInt(document.getElementById('ww').value)||300;}
+function H(){return parseInt(document.getElementById('wh').value)||240;}
+function MC(){return parseInt(document.getElementById('mc').value)||90;}
+function p(cm){return cm*sc;}
+
+function setup(){
+  const wr=document.getElementById('cw');
+  const cw=wr.clientWidth||520,ch=Math.max(wr.clientHeight||400,360);
+  cv.width=cw;cv.height=ch;
+  sc=Math.min((cw-PAD-12)/W(),(ch-PADY-32)/H());
+}
+
+function drawMod(m,isSel){
+  const x=m.px,y=m.py,w=p(m.w),h=p(m.h);
+  const s=m.col.stroke,f=m.col.fill,tx=m.col.text;
+  const ln=m.linea;
+  cx.fillStyle=f;
+  cx.strokeStyle=isSel?'#e24b4a':s;
+  cx.lineWidth=isSel?2:1;
+  cx.beginPath();cx.roundRect(x,y,w,h,2);cx.fill();cx.stroke();
+  cx.strokeStyle=s;cx.fillStyle=s;
+  if(ln==='tranquera'){
+    const mg=Math.min(w*0.13,11),mg2=Math.min(h*0.1,10);
+    cx.lineWidth=1.8;cx.strokeRect(x+mg,y+mg2,w-mg*2,h-mg2*2);
+    if(m.v==='caj4'){
+      const rh=h/4;cx.lineWidth=0.7;
+      for(let i=1;i<4;i++){cx.beginPath();cx.moveTo(x+mg,y+rh*i);cx.lineTo(x+w-mg,y+rh*i);cx.stroke();}
+      for(let i=0;i<4;i++){cx.beginPath();cx.roundRect(x+w*0.5-15,y+rh*i+rh*0.22,30,9,3);cx.fill();}
+    } else if(m.v==='caj3'){
+      const sh=h*0.25;cx.lineWidth=0.7;
+      cx.beginPath();cx.moveTo(x+mg,y+sh);cx.lineTo(x+w-mg,y+sh);cx.stroke();
+      cx.beginPath();cx.moveTo(x+mg,y+sh*2);cx.lineTo(x+w-mg,y+sh*2);cx.stroke();
+      cx.beginPath();cx.roundRect(x+w*0.5-15,y+sh*0.22,30,9,3);cx.fill();
+      cx.beginPath();cx.roundRect(x+w*0.5-15,y+sh+sh*0.22,30,9,3);cx.fill();
+      cx.beginPath();cx.roundRect(x+w*0.5-15,y+sh*2+(h-sh*2)*0.22,30,9,3);cx.fill();
+    } else {
+      const splits=(m.w===120)?2:1;const sw=w/splits;
+      for(let i=0;i<splits;i++){
+        if(splits>1){cx.lineWidth=0.8;cx.beginPath();cx.moveTo(x+sw*(i+1),y+mg2);cx.lineTo(x+sw*(i+1),y+h-mg2);cx.stroke();}
+        cx.beginPath();cx.roundRect(x+sw*i+sw*0.5-15,y+h*0.22,30,9,3);cx.fill();
+      }
+    }
+  } else if(ln==='sashimi'){
+    if(m.v==='puertas'){
+      const splits=(m.w===120)?2:1;const sw=w/splits;
+      for(let i=0;i<splits;i++){
+        if(splits>1&&i<splits-1){cx.lineWidth=0.7;cx.beginPath();cx.moveTo(x+sw*(i+1),y+4);cx.lineTo(x+sw*(i+1),y+h-4);cx.stroke();}
+        const herX=x+sw*i+sw*0.78-2;
+        cx.beginPath();cx.roundRect(herX,y+h*0.28,4,h*0.44,2);cx.fill();
+      }
+    } else {
+      const rows=m.v==='caj4'?4:3;const rh=h/rows;
+      cx.lineWidth=0.7;
+      for(let i=1;i<rows;i++){cx.beginPath();cx.moveTo(x+4,y+rh*i);cx.lineTo(x+w-4,y+rh*i);cx.stroke();}
+      for(let i=0;i<rows;i++){cx.beginPath();cx.roundRect(x+w*0.78-14,y+rh*i+rh*0.5-3,28,6,3);cx.fill();}
+    }
+  } else {
+    cx.lineWidth=0.7;
+    if(m.v==='caj4'){
+      const rh=h/4;
+      for(let i=1;i<4;i++){cx.beginPath();cx.moveTo(x+4,y+rh*i);cx.lineTo(x+w-4,y+rh*i);cx.stroke();}
+    } else if(m.v==='caj3'){
+      const sh=h*0.25;
+      cx.beginPath();cx.moveTo(x+4,y+sh);cx.lineTo(x+w-4,y+sh);cx.stroke();
+      cx.beginPath();cx.moveTo(x+4,y+sh*2);cx.lineTo(x+w-4,y+sh*2);cx.stroke();
+    } else if(m.v==='puertas'&&m.w===120){
+      cx.beginPath();cx.moveTo(x+w*0.5,y+4);cx.lineTo(x+w*0.5,y+h-4);cx.stroke();
+    }
+  }
+  cx.fillStyle=tx;
+  cx.font=`500 ${Math.max(9,Math.min(10,sc*4.5))}px sans-serif`;
+  cx.textAlign='center';cx.textBaseline='bottom';
+  cx.fillText(`${m.w}x${m.h}`,x+w*0.5,y+h-2);
+}
+
+function draw(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  const wCm=W(),hCm=H(),mc=MC();
+  const wallX=PAD,wallY=PADY,wallW=p(wCm),wallH=p(hCm);
+  const floor=wallY+wallH,mesaY=floor-p(mc);
+  cx.fillStyle='rgba(200,195,185,0.15)';cx.fillRect(wallX,wallY,wallW,wallH);
+  cx.strokeStyle='rgba(100,100,90,0.4)';cx.lineWidth=1.5;cx.strokeRect(wallX,wallY,wallW,wallH);
+  cx.fillStyle='rgba(200,185,160,0.1)';cx.fillRect(wallX,mesaY,wallW,p(mc));
+  cx.fillStyle='rgba(160,130,90,0.6)';cx.fillRect(wallX,mesaY,wallW,p(3));
+  cx.strokeStyle='rgba(120,90,50,0.4)';cx.lineWidth=0.7;cx.strokeRect(wallX,mesaY,wallW,p(3));
+  const alGuY=mesaY-p(50);
+  cx.strokeStyle='rgba(100,140,100,0.2)';cx.setLineDash([4,4]);cx.lineWidth=0.7;
+  cx.beginPath();cx.moveTo(wallX,alGuY);cx.lineTo(wallX+wallW,alGuY);cx.stroke();cx.setLineDash([]);
+  cx.fillStyle='rgba(100,100,90,0.5)';cx.font='10px sans-serif';
+  cx.textAlign='left';cx.textBaseline='top';cx.fillText(`${wCm} cm`,wallX+4,floor+6);
+  cx.save();cx.translate(wallX-7,wallY+wallH*0.5);cx.rotate(-Math.PI/2);cx.textAlign='center';cx.fillText(`${hCm} cm`,0,0);cx.restore();
+  const lnames={clinic:'Clinic',sashimi:'Sashimi',tranquera:'Tranquera'};
+  cx.fillStyle='rgba(80,80,75,0.4)';cx.font='bold 10px sans-serif';
+  cx.textAlign='right';cx.textBaseline='top';
+  cx.fillText(`${lnames[linea]} · ${color.id}`,wallX+wallW-4,wallY+4);
+  mods.forEach(m=>drawMod(m,m===sel));
+  const bd=document.getElementById('bd'),si=document.getElementById('si');
+  if(sel){bd.style.display='inline-flex';si.textContent=`${sel.t==='bm'?'Bajo mesada':'Alacena'} ${sel.w}x${sel.h}cm · ${sel.linea} · ${sel.col.id}`;}
+  else{bd.style.display='none';si.textContent='';}
+}
+
+function setL(l){
+  linea=l;
+  const colors={clinic:'#2e7d32',sashimi:'#795548',tranquera:'#4527a0'};
+  document.querySelectorAll('.lbtn').forEach(b=>{
+    const n=b.id.replace('lb-','');
+    b.classList.toggle('on',n===l);
+    b.style.borderColor=n===l?colors[n]:'transparent';
+  });draw();
+}
+function setC(id,fill,stroke,text){
+  color={id,fill,stroke,text};
+  document.querySelectorAll('.cb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('cb-'+id).classList.add('on');draw();
+}
+function add(t,w,v,h){
+  const floor=PADY+p(H()),mesaY=floor-p(MC());
+  const initY=t==='bm'?mesaY-p(h):mesaY-p(50)-p(h);
+  const m={t,w,h,v,linea,col:{...color},px:PAD,py:initY};
+  mods.push(m);sel=m;draw();
+}
+function hit(mx,my){
+  for(let i=mods.length-1;i>=0;i--){
+    const m=mods[i];if(mx>=m.px&&mx<=m.px+p(m.w)&&my>=m.py&&my<=m.py+p(m.h))return m;
+  }return null;
+}
+cv.addEventListener('mousedown',e=>{
+  const r=cv.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const m=hit(mx,my);sel=m||null;
+  if(m){drag=true;dox=mx-m.px;doy=my-m.py;cv.style.cursor='grabbing';}draw();
+});
+cv.addEventListener('mousemove',e=>{
+  if(!drag||!sel)return;const r=cv.getBoundingClientRect();
+  sel.px=e.clientX-r.left-dox;sel.py=e.clientY-r.top-doy;draw();
+});
+cv.addEventListener('mouseup',()=>{drag=false;cv.style.cursor='default';});
+cv.addEventListener('mouseleave',()=>{drag=false;cv.style.cursor='default';});
+cv.addEventListener('dblclick',e=>{
+  const r=cv.getBoundingClientRect();const m=hit(e.clientX-r.left,e.clientY-r.top);
+  if(m){mods=mods.filter(x=>x!==m);sel=null;draw();}
+});
+cv.addEventListener('touchstart',e=>{
+  e.preventDefault();const r=cv.getBoundingClientRect();const t=e.touches[0];
+  const m=hit(t.clientX-r.left,t.clientY-r.top);
+  if(m){sel=m;drag=true;dox=t.clientX-r.left-m.px;doy=t.clientY-r.top-m.py;}draw();
+},{passive:false});
+cv.addEventListener('touchmove',e=>{
+  e.preventDefault();if(!drag||!sel)return;const r=cv.getBoundingClientRect();
+  sel.px=e.touches[0].clientX-r.left-dox;sel.py=e.touches[0].clientY-r.top-doy;draw();
+},{passive:false});
+cv.addEventListener('touchend',()=>{drag=false;});
+function del(){if(sel){mods=mods.filter(m=>m!==sel);sel=null;draw();}}
+function clearAll(){mods=[];sel=null;draw();}
+function snap(){
+  const ec=document.createElement('canvas');ec.width=cv.width;ec.height=cv.height;
+  const ectx=ec.getContext('2d');ectx.fillStyle='#f8f6f2';ectx.fillRect(0,0,ec.width,ec.height);
+  ectx.drawImage(cv,0,0);ectx.fillStyle='rgba(80,80,75,0.5)';ectx.font='10px sans-serif';
+  ectx.textAlign='right';ectx.fillText(`Suma · ${W()}x${H()}cm`,ec.width-10,ec.height-6);
+  const a=document.createElement('a');a.download='cocina-suma.png';a.href=ec.toDataURL();a.click();
+}
+function redraw(){setup();draw();}
+window.addEventListener('resize',redraw);
+window.addEventListener('load',()=>{setup();draw();});
+</script>
+</body>
+</html>
